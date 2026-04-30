@@ -9,6 +9,7 @@ import configparser
 from pgdb import PGDatabase
 import logging
 import os
+import glob
 
 # Логирование
 os.makedirs("/root/Diplom/logs", exist_ok=True)
@@ -35,6 +36,22 @@ DATABASE_CREDS = {
     'USER': config['Database']['USER'],
     'PASSWORD': config['Database']['PASSWORD']
 }
+
+# Функция для удаления старых csv-файлов (храним за последние 3 дня)
+def clean_old_csv(days=3):
+    cutoff = datetime.now() - timedelta(days=days)
+    csv_files = glob.glob("*.csv") 
+    deleted = 0
+    for file_path in csv_files:
+        file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+        if file_time < cutoff:
+            os.remove(file_path)
+            print(f"Удалён: {file_path}")
+            logger.info(f"Удалён старый CSV: {file_path}")
+            deleted += 1
+    if deleted > 0:
+        print(f"Очистка завершена. Удалено файлов: {deleted}")
+        logger.info(f"Очистка CSV завершена. Удалено файлов: {deleted}")
 
 # Функция для получения данных за вчерашний день
 def yesterday_date():
@@ -70,7 +87,7 @@ def yesterday_date():
     df = pd.DataFrame(all_data)
     print(f"\nВсего собрано записей: {len(df)}")
     logger.info(f"Всего собрано записей: {len(df)}")
-    # Сохранение датафрейм с вчерашними данными в csv-файле 
+    # Сохранение датафрейм с вчерашними данными в csv-файле (для просмотра)
     df.to_csv(f"sales_backup_{date_str}.csv", index=False)
     print(f"Резервная копия сохранена: sales_backup_{date_str}.csv")
     logger.info(f"Резервная копия сохранена: sales_backup_{date_str}.csv")
@@ -132,15 +149,20 @@ count = database.cursor.fetchone()[0]
 if count > 0:
     print(f"Данные за {date_str} уже есть в БД. Пропускаем.")
     logger.info(f"Данные за {date_str} уже есть в БД. Пропускаем.")
-    exit(0)
-
-# Загрузка данных
-if not df.empty:
-    logger.info(f"Получено {len(df)} строк. Начинаем загрузку в БД...")
-    # Вызов функции загрузки данных из датафрейма в БД
-    load_dataframe_to_db(df, database, 'sales')
-    logger.info(f"Данные за {date_str} успешно загружены")
+    # Очистка старых CSV даже если данные уже были
+    clean_old_csv(3)
 else:
-    print("Нет данных для загрузки")
-    logger.warning("Нет данных для загрузки")
+    # Загрузка данных
+    if not df.empty:
+        logger.info(f"Получено {len(df)} строк. Начинаем загрузку в БД...")
+        # Вызов функции загрузки данных из датафрейма в БД
+        load_dataframe_to_db(df, database, 'sales')
+        logger.info(f"Данные за {date_str} успешно загружены")
+    else:
+        print("Нет данных для загрузки")
+        logger.warning("Нет данных для загрузки")
+    
+    # Удаление старых csv-файлов (храним за последние 3 дня)
+    clean_old_csv(3)
+
 logger.info("ЕЖЕДНЕВНЫЙ ETL ПРОЦЕСС ЗАВЕРШЕН")
