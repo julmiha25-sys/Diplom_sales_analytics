@@ -45,7 +45,7 @@ def yesterday_date():
     date_str = (datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).strftime("%Y-%m-%d")
     logger.info(f"Начало сбора данных за {date_str}")
     try:
-        response = requests.get(url, params={"date": date_str}, timeout=10)
+        response = requests.get(url, params={"date": date_str}, timeout=30)
         if response.status_code == 200: # Запрос успешен
             try:
                 data = response.json()
