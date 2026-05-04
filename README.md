@@ -64,9 +64,10 @@ API отдает данные только за один день. Дата пе
     
 <img width="682" height="499" alt="image" src="https://github.com/user-attachments/assets/6c265dfe-1d61-41bc-88aa-d987cc939a22" />
 
-В файле .env задаются переменные окружения с данными для подключения к БД. Сам файл не передается в GitHub, а только его шаблон.
+
+      В файле .env задаются переменные окружения с данными для подключения к БД. Сам файл не передается в GitHub, а только его шаблон.
    
-Файл pgdb.py содержит класс для подключения к БД PGDatabase c функциями подключения к БД Postgres, выполнения SQL-запросов, массовой вставки данных.
+      Файл pgdb.py содержит класс для подключения к БД PGDatabase c функциями подключения к БД Postgres, выполнения SQL-запросов, массовой вставки данных.
 
 23.	Установим библиотеку requests: pip install requests
     
@@ -98,18 +99,18 @@ API отдает данные только за один день. Дата пе
 
 38.	Установим Docker:
     
-sudo apt-get update
+      sudo apt-get update
 
-sudo apt-get install ca-certificates curl gnupg, sudo install -m 0755 -d /etc/apt/keyrings 
+      sudo apt-get install ca-certificates curl gnupg, sudo install -m 0755 -d /etc/apt/keyrings 
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg, sudo chmod a+r /etc/apt/keyrings/docker.gpg, echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null, sudo apt-get update
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg, sudo chmod a+r /etc/apt/keyrings/docker.gpg, echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null, sudo apt-get update
 
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+      sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
 
 39.	Настроим Metabase: mkdir ~/metabase, cd ~/metabase, nano compose.yml
     
-    Заполним файл настроек своими данными и запустим: sudo docker compose up -d
+      Заполним файл настроек своими данными и запустим: sudo docker compose up -d
    	
 40.	После установки заходим в браузере по адресу http:// http://ip_server/:3000 и настроим Metabase.
 
-41. Создадим коллекцию и скопируем все SQL-запросы, создадим по нима карточки и внесем в дашборд.
+41.   Создадим коллекцию и скопируем все SQL-запросы, создадим по нима карточки и внесем в дашборд.
