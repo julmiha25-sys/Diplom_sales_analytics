@@ -1,14 +1,17 @@
-﻿# -*- coding: utf-8 -*-
+﻿﻿# -*- coding: utf-8 -*-
 # Импорт библиотеки для выполнения HTTP-запросов к API
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
-# Импорт библиотеки для чтения настроек из файла config.ini
-import configparser
+# Импорт библиотеки для работы с переменными окружения
+from dotenv import load_dotenv
 # Импорт своей локальной библиотеки для подключения к PostgreSQL из файла pgdb.py
 from pgdb import PGDatabase
 import logging
 import os
+
+# Загрузка переменных окружения из файла .env
+load_dotenv()
 
 # Настройки логирования
 os.makedirs("/root/Diplom/logs", exist_ok=True)
@@ -25,15 +28,12 @@ logger = logging.getLogger(__name__)
 logger.info("ЗАПУСК ETL ПРОЦЕССА")
 logger.info(f"Лог файл: {log_filename}")
 
-# Чтение config.ini
-config = configparser.ConfigParser()
-config.read('config.ini')
-
+# Чтение параметров подключения из переменных окружения
 DATABASE_CREDS = {
-    'HOST': config['Database']['HOST'],
-    'DATABASE': config['Database']['DATABASE'],
-    'USER': config['Database']['USER'],
-    'PASSWORD': config['Database']['PASSWORD']
+    'HOST': os.getenv('DB_HOST', 'localhost'),
+    'DATABASE': os.getenv('DB_NAME', 'postgres'),
+    'USER': os.getenv('DB_USER', 'postgres'),
+    'PASSWORD': os.getenv('DB_PASSWORD', '')
 }
 
 # Функция для единоразового накопления истории
@@ -47,7 +47,7 @@ def find_old_date():
     while True:
         date_str = current.strftime("%Y-%m-%d")
         try:
-            response = requests.get(url, params={"date": date_str}, timeout=10)
+            response = requests.get(url, params={"date": date_str}, timeout=30)
             if response.status_code == 200:
                 try:
                     data = response.json()
@@ -97,7 +97,7 @@ def load_dataframe_to_db(df, database, table_name='sales'):
     query = f"INSERT INTO {table_name} ({columns_str}) VALUES ({placeholders})"
     # Преобразование датафрейма в список кортежей (каждый — одна строка данных)
     data_tuples = [tuple(row) for row in df.to_numpy()]
-    # Вставка всех данных одним запросом
+    # Вставка всех данных одним запросом - вызов функции массовой вставки данных из pgdb.py
     print(f"Загрузка {len(data_tuples)} строк в таблицу {table_name}...")
     logger.info(f"Загрузка {len(data_tuples)} строк в таблицу {table_name}...")
     try:

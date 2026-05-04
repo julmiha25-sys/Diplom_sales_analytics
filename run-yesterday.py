@@ -1,15 +1,18 @@
-﻿# -*- coding: utf-8 -*-
+﻿﻿# -*- coding: utf-8 -*-
 # Импорт библиотеки для выполнения HTTP-запросов к API
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
-# Импорт библиотеки для чтения настроек из файла config.ini
-import configparser
+# Импорт библиотеки для работы с переменными окружения
+from dotenv import load_dotenv
 # Импорт библиотеки для подключения к PostgreSQL
 from pgdb import PGDatabase
 import logging
 import os
 import glob
+
+# Загрузка переменных окружения из файла .env
+load_dotenv()
 
 # Логирование
 os.makedirs("/root/Diplom/logs", exist_ok=True)
@@ -27,14 +30,12 @@ logger = logging.getLogger(__name__)
 logger.info("ЗАПУСК ЕЖЕДНЕВНОГО ETL ПРОЦЕССА")
 logger.info(f"Лог файл: {log_filename}")
 
-# Чтение config.ini
-config = configparser.ConfigParser()
-config.read('config.ini')
+# Чтение параметров подключения из переменных окружения
 DATABASE_CREDS = {
-    'HOST': config['Database']['HOST'],
-    'DATABASE': config['Database']['DATABASE'],
-    'USER': config['Database']['USER'],
-    'PASSWORD': config['Database']['PASSWORD']
+    'HOST': os.getenv('DB_HOST', 'localhost'),
+    'DATABASE': os.getenv('DB_NAME', 'postgres'),
+    'USER': os.getenv('DB_USER', 'postgres'),
+    'PASSWORD': os.getenv('DB_PASSWORD', '')
 }
 
 # Функция для удаления старых csv-файлов (храним за последние 3 дня)
@@ -52,6 +53,22 @@ def clean_old_csv(days=3):
     if deleted > 0:
         print(f"Очистка завершена. Удалено файлов: {deleted}")
         logger.info(f"Очистка CSV завершена. Удалено файлов: {deleted}")
+
+# Функция для удаления старых логов (храним за последние 3 дня)
+def clean_old_log(days=3):
+    cutoff = datetime.now() - timedelta(days=days)
+    log_files = glob.glob("/root/Diplom/logs/*.log") 
+    deleted = 0
+    for log_path in log_files:
+        file_time = datetime.fromtimestamp(os.path.getmtime(log_path))
+        if file_time < cutoff:
+            os.remove(log_path)
+            print(f"Удалён: {log_path}")
+            logger.info(f"Удалён старый log: {log_path}")
+            deleted += 1
+    if deleted > 0:
+        print(f"Очистка завершена. Удалено файлов: {deleted}")
+        logger.info(f"Очистка log завершена. Удалено файлов: {deleted}")
 
 # Функция для получения данных за вчерашний день
 def yesterday_date():
@@ -149,8 +166,6 @@ count = database.cursor.fetchone()[0]
 if count > 0:
     print(f"Данные за {date_str} уже есть в БД. Пропускаем.")
     logger.info(f"Данные за {date_str} уже есть в БД. Пропускаем.")
-    # Очистка старых CSV даже если данные уже были
-    clean_old_csv(3)
 else:
     # Загрузка данных
     if not df.empty:
@@ -161,8 +176,11 @@ else:
     else:
         print("Нет данных для загрузки")
         logger.warning("Нет данных для загрузки")
-    
-    # Удаление старых csv-файлов (храним за последние 3 дня)
-    clean_old_csv(3)
+
+# Удаление старых csv-файлов (храним за последние 3 дня)
+clean_old_csv(3)
+
+# Удаление старых log-файлов (храним за последние 3 дня)
+clean_old_log(3)
 
 logger.info("ЕЖЕДНЕВНЫЙ ETL ПРОЦЕСС ЗАВЕРШЕН")
